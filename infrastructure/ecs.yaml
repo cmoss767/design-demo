@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECS Infrastructure
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+  SecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+  InstanceProfileArn:
+    Type: String
+
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: api-cluster
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref SecurityGroupId
+      Subnets: !Ref SubnetIds
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      Port: 3000
+      Protocol: HTTP
+      TargetType: instance
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 10
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: '{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id}}'
+        InstanceType: t3.micro
+        SecurityGroupIds:
+          - !Ref SecurityGroupId
+        IamInstanceProfile:
+          Arn: !Ref InstanceProfileArn
+        UserData: !Base64
+          Fn::Sub: |
+            #!/bin/bash
+            echo "ECS_CLUSTER=${ECSCluster}" >> /etc/ecs/ecs.config
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: ECS-Instance
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier: !Ref SubnetIds
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: 2
+      MaxSize: 2
+      DesiredCapacity: 2
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      Tags:
+        - Key: Name
+          Value: ECS-Instance
+          PropagateAtLaunch: true
+        - Key: Environment
+          Value: Production
+          PropagateAtLaunch: true
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: api-task
+      RequiresCompatibilities:
+        - EC2
+      NetworkMode: bridge
+      ContainerDefinitions:
+        - Name: api-container
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/hello-world-api:latest
+          PortMappings:
+            - ContainerPort: 3000
+              HostPort: 3000
+              Protocol: tcp
+          Essential: true
+          Memory: 512
+          Cpu: 256
+
+  ECSService:
+    Type: AWS::ECS::Service
+    DependsOn: Listener
+    Properties:
+      ServiceName: api-service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: 2
+      LaunchType: EC2
+      LoadBalancers:
+        - ContainerName: api-container
+          ContainerPort: 3000
+          TargetGroupArn: !Ref TargetGroup
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+
+Outputs:
+  LoadBalancerDNS:
+    Description: Load Balancer DNS Name
+    Value: !GetAtt LoadBalancer.DNSName
+  TargetGroupArn:
+    Description: Target Group ARN
+    Value: !Ref TargetGroup
