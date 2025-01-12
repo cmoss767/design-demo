@@ -46,6 +46,9 @@ curl http://localhost:80/
 
 1. Create ECR repo and push docker image:
 ```bash
+
+aws ecr create-repository --repository-name hello-world-api --region us-east-1
+
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 export ECR_URL=$AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
 
