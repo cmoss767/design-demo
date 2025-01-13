@@ -1,10 +1,16 @@
+# Configuration Options:
+# Scale containers: docker-compose up --scale api-dev=N (where N is desired instance count)
+# Port mapping: Default 80:80 (nginx) - modify for different host port
+# Volume mounts: ./api:/app enables hot reloading for development
+# Container networking: Services communicate via internal Docker network
+
 version: '3.8'
 
 services:
   api-dev:
     build:
       context: .
-      dockerfile: docker/Dockerfile.dev
+      dockerfile: Dockerfile
     expose:
       - "3000"
     volumes:

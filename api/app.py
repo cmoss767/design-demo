@@ -1,3 +1,9 @@
+# Configuration Options:
+# - Host: 0.0.0.0 allows external connections
+# - Port: 3000 (should match Dockerfile and nginx configuration)
+# - Workers: Configured via Dockerfile CMD
+# - FastAPI Settings: Add middleware, CORS, or other FastAPI configurations here
+
 from fastapi import FastAPI
 
 app = FastAPI()

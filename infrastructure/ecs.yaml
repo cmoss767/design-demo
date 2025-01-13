@@ -1,3 +1,10 @@
+# Configuration Options:
+# - Instance Type: t3.micro (modify for different performance needs)
+# - "Manual" Auto Scaling: Min/Max/Desired capacity configurable (default: 2/2/2) -- real autoscaling is not set up
+# - Container Resources: Memory: 512MB, CPU: 256 units
+# - Health Checks: 2 successful checks required, 10 failed checks for removal
+# - Deployment Configuration: 200% max, 50% minimum healthy percent
+
 AWSTemplateFormatVersion: '2010-09-09'
 Description: ECS Infrastructure
 

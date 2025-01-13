@@ -4,6 +4,35 @@ This project implements a highly scalable, low-latency API service that can be d
 ## Architecture Diagrams
 https://drive.google.com/file/d/1w6QiRmISYwOfvBvqdnYF_k_70J3f5bBx/view?usp=sharing
 
+## Architecture Considerations
+
+### Scalability
+#### AWS Implementation
+- Application Load Balancer distributes traffic across container instances
+- Configurable scaling policies based on CPU/Memory metrics
+- Container-level scaling with ECS Service desired count
+
+#### On-Premise Implementation
+- Docker Compose scaling with `--scale` parameter
+- Nginx load balancer for traffic distribution
+- Manual scaling by adjusting container count
+
+### Latency Optimization
+#### AWS Implementation
+- Multi-AZ deployment to reduce network latency
+
+#### On-Premise Implementation
+- Nginx load balancing and connection pooling
+
+### Failover & High Availability
+#### AWS Implementation
+- Multi-AZ deployment ensures zone failure resilience
+- Load balancer health checks (10 failed checks before removal)
+
+#### On-Premise Implementation
+- Nginx handles failed upstream servers automatically
+- Multiple container instances for redundancy
+
 
 ## On-Premise Setup Instructions
 
@@ -16,7 +45,7 @@ https://drive.google.com/file/d/1w6QiRmISYwOfvBvqdnYF_k_70J3f5bBx/view?usp=shari
 
 1. Clone repository
 
-2. Build and start the services:
+2. Build and start the service (below is manual scaling for 2 docker images):
 ```bash
 docker-compose up --scale api-dev=2
 ```
@@ -54,7 +83,7 @@ export ECR_URL=$AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
 
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_URL
 
-docker build -f docker/Dockerfile.prod -t hello-world-api .
+docker build -f Dockerfile -t hello-world-api .
 docker tag hello-world-api:latest $ECR_URL/hello-world-api:latest
 docker push $ECR_URL/hello-world-api:latest
 ```
@@ -63,7 +92,6 @@ docker push $ECR_URL/hello-world-api:latest
 ```bash
 cd infrastructure
 bash ./deploy.sh
-run deploy script
 ```
 
 3. Test the deployment:
@@ -73,6 +101,7 @@ aws cloudformation describe-stacks \
     --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerDNS`].OutputValue' \
     --output text
 
+# Use the LoadBalancerDNS as the URL for the curl request
 curl http://ecs-LoadBalancer-XXXXXXXXXXXXX.us-east-1.elb.amazonaws.com
 ```
 

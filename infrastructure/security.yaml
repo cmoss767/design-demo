@@ -1,3 +1,9 @@
+# Configuration Options:
+# - Inbound Rules: Ports 80 and 3000 open (0.0.0.0/0)
+# - IAM Roles: ECS instance role with container service access
+# - Managed Policies: ECS and SSM access included
+# - Security Group: Modifiable for additional ports or IP ranges
+
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Security Infrastructure'
 
