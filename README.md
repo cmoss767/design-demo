@@ -47,7 +47,7 @@ https://drive.google.com/file/d/1w6QiRmISYwOfvBvqdnYF_k_70J3f5bBx/view?usp=shari
 
 2. Build and start the service (below is manual scaling for 2 docker images):
 ```bash
-docker-compose up --scale api-dev=2
+docker-compose up --scale api=2
 ```
 
 3. Test the endpoint:
