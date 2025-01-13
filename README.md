@@ -1,6 +1,10 @@
 ## Overview
 This project implements a highly scalable, low-latency API service that can be deployed both in AWS cloud and on-premise environments. The service is containerized using Docker and supports horizontal scaling with load balancing.
 
+## Dependencies
+- FastAPI (MIT License)
+- Uvicorn (BSD 3-Clause License)
+
 ## Architecture Diagrams
 https://drive.google.com/file/d/1w6QiRmISYwOfvBvqdnYF_k_70J3f5bBx/view?usp=sharing
 
